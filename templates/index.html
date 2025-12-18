@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gym Adviser AI</title>
+
+    <link rel="icon" type="image/png"
+          href="{{ url_for('static', filename='favicon.png') }}">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="header-logo">
+    <img src="{{ url_for('static', filename='favicon.png') }}" alt="logo">
+</div>
+
+<div class="page-wrapper">
+
+    <!-- CHAT -->
+    <div class="chat-container" id="chatBox">
+        {% for msg in history %}
+        <div class="chat-message {{ msg.role }}">
+            <div class="bubble">
+                <strong>{{ msg.role.capitalize() }}:</strong> {{ msg.text | safe }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- INPUT -->
+    <div class="input-bar">
+        <textarea id="chatInput" placeholder="Type your message..."
+                  onkeydown="handleKey(event)"></textarea>
+
+        <label class="upload-icon" title="Upload CSV">
+            &#128194;
+            <input type="file" id="logFileInput">
+        </label>
+
+        <button class="send-icon" onclick="sendMessage()">&#10148;</button>
+    </div>
+</div>
+
+<!-- WORKOUT HISTORY -->
+<div class="workout-history">
+    <div class="workout-header">
+        <h3>&#128170; Previous Workouts</h3>
+        <button class="compare-btn" title="Compare selected" onclick="compareWorkouts()">Compare</button>
+    </div>
+    <div id="workoutList"></div>
+</div>
+
+
+<!-- JS -->
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+
+</body>
+</html>

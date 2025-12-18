@@ -1,0 +1,219 @@
+/* PAGE BACKGROUND */
+body {
+    background: linear-gradient(135deg, #0c0c0c, #1a1a1a, #272727);
+    background-size: 200% 200%;
+    animation: bgShift 10s infinite;
+    color: white;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* TOP LOGO HEADER */
+.header-logo {
+    position: absolute;
+    top: 20px;
+    left: 40px;
+}
+
+.header-logo img {
+    width: 50px;
+    height: 50px;
+    filter: drop-shadow(0 0 8px rgba(255,255,255,0.3));
+}
+
+@keyframes bgShift {
+    0% { background-position: 0 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+}
+
+.page-wrapper {
+    width: 72%;
+    margin-top: 100px;
+    margin-left: 110px;
+    margin-right: auto;
+}
+
+/* CHAT AREA */
+.chat-container {
+    background: rgba(255,255,255,0.05);
+    padding: 20px;
+    border-radius: 18px;
+    height: 60vh;
+    overflow-y: auto;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 0 25px rgba(0,0,0,0.4);
+}
+
+/* CHAT BUBBLES */
+.chat-message {
+    margin: 12px 0;
+    display: flex;
+}
+
+.chat-message.user .bubble {
+    background: rgba(255,255,255,0.1);
+    margin-left: auto;
+}
+
+.chat-message.assistant .bubble {
+    background: linear-gradient(135deg, #ff4f8b, #ff0055);
+    margin-right: auto;
+}
+
+.bubble {
+    padding: 14px;
+    border-radius: 14px;
+    max-width: 75%;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+/* INPUT BAR */
+.input-bar {
+    display: flex;
+    gap: 12px;
+    background: rgba(255,255,255,0.1);
+    padding: 12px;
+    margin-top: 20px;
+    border-radius: 14px;
+    align-items: center;
+}
+
+textarea {
+    flex: 1;
+    background: rgba(255,255,255,0.08);
+    border: none;
+    border-radius: 12px;
+    padding: 12px;
+    color: white;
+    resize: none;
+    outline: none;
+}
+
+/* UPLOAD BUTTON */
+.upload-icon {
+    font-size: 22px;
+    background: rgba(255,255,255,0.1);
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.upload-icon input {
+    display: none;
+}
+
+/* SEND BUTTON */
+.send-icon {
+    background: linear-gradient(135deg, #ff4f8b, #ff0055);
+    color: white;
+    font-size: 22px;
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+}
+
+/* TYPING */
+.typing {
+    display: flex;
+    gap: 6px;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    background: white;
+    opacity: 0.6;
+    border-radius: 50%;
+    animation: blink 1.4s infinite;
+}
+
+@keyframes blink {
+    0% { opacity: 0.2; }
+    50% { opacity: 1; }
+    100% { opacity: 0.2; }
+}
+
+/* WORKOUT HISTORY PANEL */
+.workout-history {
+    position: fixed;
+    right: 20px;
+    top: 100px;
+    width: 240px;
+    background: linear-gradient(145deg, #2c2c2c, #252525);
+    border-radius: 12px;
+    padding: 12px;
+    max-height: 65vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+.workout-history h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.workout-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.compare-btn {
+    width: 52px;
+    height: 26px;
+    background: linear-gradient(135deg, #ff4f8b, #ff0055);
+    border: none;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.workout-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.workout-row input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #ffbf4f;
+    cursor: pointer;
+}
+
+.workout-row button {
+    flex: 1;
+    background: linear-gradient(145deg, #3c3c3c, #353535);
+    color: #e8e8e8;
+    border: none;
+    padding: 8px;
+    margin-bottom: 6px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.workout-row button:hover {
+    background: linear-gradient(145deg, #464646, #3d3d3d);
+    transform: translateY(-1px);
+}
+
+.workout-history .compare-btn {
+    background: linear-gradient(135deg, #ff4f8b, #ff0055);
+    width: 64px;
+    height: 26px;
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(255, 79, 139, 0.35);
+}
