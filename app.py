@@ -24,10 +24,25 @@ LAST_LOG_FILE = "last_log.csv"
 PREV_LOG_FILE = "previous_log.csv"
 
 GRAPH_DIR = "static/graphs"
-ACC_GRAPH = os.path.join(GRAPH_DIR, "acceleration.png")
-TEMPO_GRAPH = os.path.join(GRAPH_DIR, "tempo.png")
 
 os.makedirs(GRAPH_DIR, exist_ok=True)
+
+
+def to_url_path(path):
+    """Convert filesystem path to a forward-slash URL for the client."""
+    if not path:
+        return path
+    return path.replace("\\", "/")
+
+
+def build_graph_paths(stamp):
+    """Return file paths for graphs tied to a unique stamp."""
+    return {
+        "acc": os.path.join(GRAPH_DIR, f"acceleration_{stamp}.png"),
+        "tempo": os.path.join(GRAPH_DIR, f"tempo_{stamp}.png"),
+        "quality": os.path.join(GRAPH_DIR, f"set_quality_{stamp}.png"),
+    }
+
 
 # ----------------------------
 # CHAT HISTORY
@@ -86,7 +101,7 @@ def ask_ollama(prompt, model="llama3.2"):
 # MARKDOWN TO HTML HELPERS
 # ----------------------------
 def markdown_images_to_html(text):
-    return re.sub(r'!\[\]\((.*?)\)', r'<img src="\1" style="max-width:100%;">', text)
+    return re.sub(r'!\[[^\]]*\]\((.*?)\)', r'<img src="\1" style="max-width:100%;">', text)
 
 
 def markdown_bold_to_html(text):
@@ -145,6 +160,37 @@ def format_duration(seconds):
     return f"{minutes} min {secs} sec"
 
 
+def pick_recommendation(issue, fallback):
+    """Rotate recommendations by date so the user sees varied cues."""
+    options = {
+        "Tempo inconsistent": [
+            "Use a steady 3-1-3 count to keep each rep duration consistent.",
+            "Match a metronome at a slow pace and keep every rep the same length.",
+            "Pick a slow song and move to its beat to smooth out your tempo.",
+        ],
+        "Power output unstable": [
+            "Move down and up at the same speed; smooth the last 3 reps.",
+            "Aim for even drive on every rep; avoid any sudden bursts.",
+            "Brace your core, then move with one continuous speed each rep.",
+        ],
+        "Form stable": [
+            "Keep this rhythm; consider a 5% load increase next set.",
+            "Stay with this pace for one more set, then add a small load bump.",
+            "Great consistency—either add 2.5–5% load or slow the eccentric slightly.",
+        ],
+        "No repetitions detected": [
+            "Check CSV columns (X,Y,Z,timestamp) and upload again.",
+            "Sensor alignment may be off—verify columns and re-record.",
+            "Re-upload with columns X,Y,Z,timestamp to capture reps correctly.",
+        ],
+    }
+    pool = options.get(issue) or []
+    if not pool:
+        return fallback
+    idx = datetime.now().toordinal() % len(pool)
+    return pool[idx]
+
+
 def split_reps_into_sets(rep_times, tempos):
     if len(rep_times) == 0:
         return []
@@ -167,13 +213,19 @@ def split_reps_into_sets(rep_times, tempos):
 def format_analysis_report(analysis):
     reps_per_set = analysis.get("reps_per_set", [])
     rep_display = reps_per_set if reps_per_set else []
+    set_quality = analysis.get("set_quality", [])
+    set_quality_display = set_quality if set_quality else []
+    bad_reps = analysis.get("bad_reps", [])
+    bad_rep_text = bad_reps if bad_reps else "None flagged"
 
     return (
         "\U0001F3CB\ufe0f Workout Analysis\n\n"
         f"\u2022 Duration: {analysis.get('duration_text', '0 min 0 sec')}\n"
         f"\u2022 Sets: {analysis.get('sets', 0)}\n"
         f"\u2022 Total repetitions: {analysis.get('rep_count', 0)}\n"
-        f"\u2022 Reps per set: {rep_display}\n\n"
+        f"\u2022 Reps per set: {rep_display}\n"
+        f"\u2022 Set quality (0-100): {set_quality_display}\n"
+        f"\u2022 Notable bad reps: {bad_rep_text}\n\n"
         "\U0001F9E0 Form Quality\n"
         f"\u2022 Average form score: {analysis.get('form_score', 0)}%\n"
         f"\u2022 Best rep: {analysis.get('best_rep', '-')}\n"
@@ -197,8 +249,11 @@ def build_coach_prompt(analysis_report, user_question):
     )
 
 
-def generate_workout_analysis(df):
+def generate_workout_analysis(df, stamp=None):
     try:
+        stamp = stamp or datetime.now().strftime("%Y%m%d_%H%M%S")
+        paths = build_graph_paths(stamp)
+
         df.columns = df.columns.str.strip()
 
         df = df.rename(columns={
@@ -224,8 +279,9 @@ def generate_workout_analysis(df):
         plt.xlabel("Time")
         plt.ylabel("Total Acceleration")
         plt.tight_layout()
-        plt.savefig(ACC_GRAPH)
+        plt.savefig(paths["acc"])
         plt.close()
+        acc_graph_path = to_url_path(paths["acc"])
 
         peaks, _ = find_peaks(df["total_acc"], distance=10, prominence=0.2)
         rep_count = len(peaks)
@@ -241,9 +297,9 @@ def generate_workout_analysis(df):
             plt.xlabel("Rep Number")
             plt.ylabel("Seconds Between Reps")
             plt.tight_layout()
-            plt.savefig(TEMPO_GRAPH)
+            plt.savefig(paths["tempo"])
             plt.close()
-            tempo_graph = TEMPO_GRAPH
+            tempo_graph = to_url_path(paths["tempo"])
 
         reps_per_set = split_reps_into_sets(rep_times, tempos)
         sets = len(reps_per_set)
@@ -251,6 +307,55 @@ def generate_workout_analysis(df):
         peak_heights = np.asarray(df["total_acc"].iloc[peaks], dtype=float) if rep_count > 0 else np.array([])
         tempo_cv = float(np.std(tempos) / np.mean(tempos)) if len(tempos) > 1 and np.mean(tempos) > 0 else 0
         peak_var = float(np.std(peak_heights) / np.mean(peak_heights)) if rep_count > 1 and np.mean(peak_heights) > 0 else 0
+
+        # Per-set quality and bad rep detection
+        bad_reps = []
+        set_quality = []
+        if rep_count > 0:
+            mean_h = float(np.mean(peak_heights))
+            std_h = float(np.std(peak_heights))
+            med_t = float(np.median(tempos)) if len(tempos) > 0 else 0
+
+            cursor = 0
+            for count in reps_per_set:
+                if count <= 0:
+                    set_quality.append(0)
+                    continue
+                slice_heights = peak_heights[cursor:cursor + count]
+                cursor += count
+
+                slice_cv = float(np.std(slice_heights) / np.mean(slice_heights)) if slice_heights.size > 0 and np.mean(slice_heights) > 0 else 0
+                set_score = max(50, min(100, round(100 - min(slice_cv * 120, 50), 1)))
+                set_quality.append(set_score)
+
+            for idx, h in enumerate(peak_heights, start=1):
+                bad_height = std_h > 0 and h < (mean_h - 0.9 * std_h)
+                if idx > 1 and med_t > 0:
+                    gap = tempos[idx - 2]  # tempo gap preceding this rep
+                    tempo_dev = abs(gap - med_t) / med_t
+                    tempo_outlier = tempo_dev > 0.4
+                else:
+                    tempo_outlier = False
+                if bad_height or tempo_outlier:
+                    bad_reps.append(idx)
+
+        quality_graph = None
+        if set_quality:
+            plt.figure(figsize=(8, 4))
+            set_nums = list(range(1, len(set_quality) + 1))
+            plt.bar(set_nums, set_quality, color="#ff4f8b")
+            plt.ylim(0, 105)
+            plt.title("Set Quality (0-100)")
+            plt.xlabel("Set")
+            plt.ylabel("Quality Score")
+            for i, val in enumerate(set_quality):
+                plt.text(set_nums[i], val + 1, str(val), ha="center", va="bottom", fontsize=8, color="white")
+            if bad_reps:
+                plt.figtext(0.02, 0.02, f"Notable bad reps: {bad_reps}", ha="left", fontsize=8, color="#dddddd")
+            plt.tight_layout()
+            plt.savefig(paths["quality"], bbox_inches="tight")
+            plt.close()
+            quality_graph = to_url_path(paths["quality"])
 
         form_score = 100
         form_score -= min(tempo_cv * 100, 25)
@@ -261,16 +366,16 @@ def generate_workout_analysis(df):
 
         if rep_count == 0:
             issue = "No repetitions detected"
-            recommendation = "Check CSV columns (X,Y,Z,timestamp) and upload again."
+            recommendation = pick_recommendation(issue, "Check CSV columns (X,Y,Z,timestamp) and upload again.")
         elif tempo_cv > 0.25:
             issue = "Tempo inconsistent"
-            recommendation = "Use a steady 3-1-3 count to keep each rep duration consistent."
+            recommendation = pick_recommendation(issue, "Use a steady 3-1-3 count to keep each rep duration consistent.")
         elif peak_var > 0.35:
             issue = "Power output unstable"
-            recommendation = "Move down and up at the same speed; smooth the last 3 reps."
+            recommendation = pick_recommendation(issue, "Move down and up at the same speed; smooth the last 3 reps.")
         else:
             issue = "Form stable"
-            recommendation = "Keep this rhythm; consider a 5% load increase next set."
+            recommendation = pick_recommendation(issue, "Keep this rhythm; consider a 5% load increase next set.")
 
         duration_seconds = float(timestamps.max() - timestamps.min()) if len(timestamps) > 1 else 0.0
 
@@ -280,13 +385,15 @@ def generate_workout_analysis(df):
             "sets": sets,
             "rep_count": int(rep_count),
             "reps_per_set": [int(x) for x in reps_per_set] if reps_per_set else [],
+            "set_quality": [float(x) for x in set_quality] if set_quality else [],
+            "bad_reps": [int(x) for x in bad_reps] if bad_reps else [],
             "form_score": form_score,
             "best_rep": best_rep,
             "issue": issue,
             "recommendation": recommendation,
         }
 
-        return analysis, ACC_GRAPH, tempo_graph
+        return analysis, acc_graph_path, tempo_graph, quality_graph
 
     except Exception as e:
         return {"error": f"Error analyzing workout: {str(e)}"}, None, None
@@ -303,7 +410,13 @@ def home():
 
 @app.route("/workouts", methods=["GET"])
 def get_workouts():
-    return jsonify(load_workout_history())
+    data = load_workout_history()
+    for entry in data:
+        if isinstance(entry, dict):
+            for key in ("acc_graph", "tempo_graph", "quality_graph"):
+                if key in entry and isinstance(entry[key], str):
+                    entry[key] = to_url_path(entry[key])
+    return jsonify(data)
 
 
 @app.route("/send", methods=["POST"])
@@ -330,18 +443,30 @@ def send_message():
         logfile.save(LAST_LOG_FILE)
         df = pd.read_csv(LAST_LOG_FILE)
 
-        analysis, acc_graph, tempo_graph = generate_workout_analysis(df)
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        analysis, acc_graph, tempo_graph, quality_graph = generate_workout_analysis(df, stamp=stamp)
 
         if "error" in analysis:
             response_text = analysis["error"]
         else:
-            report_text = format_analysis_report(analysis)
+            now = datetime.now()
+            report_text = (
+                f"Analyzing data for {now.strftime('%Y-%m-%d')}.\n\n"
+                f"{format_analysis_report(analysis)}"
+            )
+            if acc_graph:
+                report_text += f"\n\n![Acceleration Graph]({acc_graph})"
+            if tempo_graph:
+                report_text += f"\n\n![Tempo Graph]({tempo_graph})"
+            if quality_graph:
+                report_text += f"\n\n![Set Quality]({quality_graph})"
             workout_history.append({
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": now.isoformat(),
                 "analysis": analysis,
                 "report": report_text,
                 "acc_graph": acc_graph,
                 "tempo_graph": tempo_graph,
+                "quality_graph": quality_graph,
             })
             save_workout_history(workout_history)
             response_text = report_text

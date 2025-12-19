@@ -5,19 +5,8 @@ body {
     animation: bgShift 10s infinite;
     color: white;
     font-family: 'Segoe UI', sans-serif;
-}
-
-/* TOP LOGO HEADER */
-.header-logo {
-    position: absolute;
-    top: 20px;
-    left: 40px;
-}
-
-.header-logo img {
-    width: 50px;
-    height: 50px;
-    filter: drop-shadow(0 0 8px rgba(255,255,255,0.3));
+    margin: 0;
+    padding: 0 24px 32px 24px;
 }
 
 @keyframes bgShift {
@@ -26,11 +15,17 @@ body {
     100% { background-position: 0 50%; }
 }
 
+.main-layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    max-width: 1200px;
+    margin: 80px auto 0 auto;
+}
+
 .page-wrapper {
-    width: 72%;
-    margin-top: 100px;
-    margin-left: 110px;
-    margin-right: auto;
+    flex: 1;
+    min-width: 0;
 }
 
 /* CHAT AREA */
@@ -137,14 +132,13 @@ textarea {
 
 /* WORKOUT HISTORY PANEL */
 .workout-history {
-    position: fixed;
-    right: 20px;
-    top: 100px;
-    width: 240px;
+    position: sticky;
+    top: 60px;
+    width: 260px;
     background: linear-gradient(145deg, #2c2c2c, #252525);
     border-radius: 12px;
     padding: 12px;
-    max-height: 65vh;
+    max-height: 70vh;
     overflow-y: auto;
     box-shadow: 0 10px 30px rgba(0,0,0,0.35);
 }
@@ -216,4 +210,54 @@ textarea {
     border-radius: 7px;
     cursor: pointer;
     box-shadow: 0 6px 16px rgba(255, 79, 139, 0.35);
+}
+
+.chat-message .bubble img {
+    display: block;
+    margin-top: 12px;
+    border-radius: 10px;
+    max-width: 100%;
+}
+
+/* RESPONSIVE LAYOUT */
+@media (max-width: 1200px) {
+    .main-layout {
+        max-width: 100%;
+        padding: 0 8px;
+    }
+}
+
+@media (max-width: 900px) {
+    body {
+        padding: 0 16px 24px 16px;
+    }
+
+    .main-layout {
+        flex-direction: column;
+        gap: 16px;
+        margin-top: 60px;
+    }
+
+    .chat-container {
+        height: 50vh;
+    }
+
+    .workout-history {
+        position: static;
+        width: 100%;
+        max-height: none;
+        margin: 0;
+    }
+
+    .workout-header {
+        gap: 12px;
+    }
+
+    .workout-row {
+        flex-wrap: wrap;
+    }
+
+    .workout-row button {
+        width: 100%;
+    }
 }

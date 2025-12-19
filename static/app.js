@@ -99,6 +99,17 @@ if (uploadInput) {
 // ----------------------------
 let workoutsCache = [];
 
+function formatWorkoutLabel(workout, fallbackNumber) {
+    const ts = workout && workout.timestamp;
+    if (ts) {
+        const d = new Date(ts);
+        if (!isNaN(d)) {
+            return d.toISOString().slice(0, 10);
+        }
+    }
+    return `Workout ${fallbackNumber}`;
+}
+
 function showWorkout(workout, label) {
     const report = workout.report || workout.summary || "";
     let htmlReport = report;
@@ -120,6 +131,10 @@ function showWorkout(workout, label) {
         html += `<br><img src="${workout.tempo_graph}" style="max-width:100%">`;
     }
 
+    if (workout.quality_graph) {
+        html += `<br><img src="${workout.quality_graph}" style="max-width:100%">`;
+    }
+
     addMessage("assistant", html);
 }
 
@@ -134,6 +149,7 @@ function refreshWorkouts() {
             data.slice().reverse().forEach((w, i) => {
                 const actualIndex = data.length - 1 - i; // index in original array
                 const labelNum = data.length - actualIndex;
+                const label = formatWorkoutLabel(w, labelNum);
 
                 const row = document.createElement("div");
                 row.className = "workout-row";
@@ -145,8 +161,8 @@ function refreshWorkouts() {
                 checkbox.id = `workout-${labelNum}`;
 
                 const btn = document.createElement("button");
-                btn.innerText = `Workout ${labelNum}`;
-                btn.onclick = () => showWorkout(w, `Workout ${labelNum}`);
+                btn.innerText = label;
+                btn.onclick = () => showWorkout(w, label);
 
                 row.appendChild(checkbox);
                 row.appendChild(btn);
@@ -179,6 +195,7 @@ function compareWorkouts() {
 
     entries.forEach(({ idx, data }) => {
         const number = workoutsCache.length - idx;
+        const label = formatWorkoutLabel(data, number);
         const a = data.analysis || {};
         const reps = a.rep_count ?? "-";
         const sets = a.sets ?? "-";
@@ -187,19 +204,19 @@ function compareWorkouts() {
         const rec = a.recommendation ?? "n/a";
 
         lines.push(
-            `Workout ${number}: reps ${reps}, sets ${sets}, form ${form}%, issue: ${issue}, cue: ${rec}`
+            `${label}: reps ${reps}, sets ${sets}, form ${form}%, issue: ${issue}, cue: ${rec}`
         );
 
         if (typeof a.form_score === "number") {
             if (!bestForm || a.form_score > bestForm.form_score) {
-                bestForm = { number, form_score: a.form_score };
+                bestForm = { label, form_score: a.form_score };
             }
         }
     });
 
     if (bestForm) {
         lines.push(
-            `Best form: Workout ${bestForm.number} (${bestForm.form_score}%)`
+            `Best form: ${bestForm.label} (${bestForm.form_score}%)`
         );
     }
 

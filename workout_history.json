@@ -1,6 +1,6 @@
 [
     {
-        "timestamp": "2025-12-16T02:08:22.787352",
+        "timestamp": "2025-12-19T19:07:04.903095",
         "analysis": {
             "duration_seconds": 189.438,
             "duration_text": "3 min 9 sec",
@@ -12,36 +12,36 @@
                 5,
                 6
             ],
-            "form_score": 72.0,
-            "best_rep": 25,
-            "issue": "Tempo inconsistent",
-            "recommendation": "Use a steady 3-1-3 count to keep each rep duration consistent."
-        },
-        "report": "\ud83c\udfcb\ufe0f Workout Analysis\n\n\u2022 Duration: 3 min 9 sec\n\u2022 Sets: 4\n\u2022 Total repetitions: 36\n\u2022 Reps per set: [11, 14, 5, 6]\n\n\ud83e\udde0 Form Quality\n\u2022 Average form score: 72.0%\n\u2022 Best rep: 25\n\u2022 Issue detected: Tempo inconsistent\n\u2022 Recommendation: Use a steady 3-1-3 count to keep each rep duration consistent.\n",
-        "acc_graph": "static/graphs\\acceleration.png",
-        "tempo_graph": "static/graphs\\tempo.png"
-    },
-    {
-        "timestamp": "2025-12-16T02:08:33.386312",
-        "analysis": {
-            "duration_seconds": 189.438,
-            "duration_text": "3 min 9 sec",
-            "sets": 5,
-            "rep_count": 40,
-            "reps_per_set": [
-                4,
+            "set_quality": [
+                92.4,
+                92.7,
+                96.5,
+                96.9
+            ],
+            "bad_reps": [
+                3,
+                5,
                 7,
+                8,
                 12,
-                2,
-                15
+                13,
+                15,
+                18,
+                24,
+                26,
+                28,
+                30,
+                31,
+                36
             ],
             "form_score": 72.0,
             "best_rep": 25,
             "issue": "Tempo inconsistent",
-            "recommendation": "Use a steady 3-1-3 count to keep each rep duration consistent."
+            "recommendation": "Pick a slow song and move to its beat to smooth out your tempo."
         },
-        "report": "\ud83c\udfcb\ufe0f Workout Analysis\n\n\u2022 Duration: 3 min 9 sec\n\u2022 Sets: 5\n\u2022 Total repetitions: 40\n\u2022 Reps per set: [4, 7, 12, 2, 15]\n\n\ud83e\udde0 Form Quality\n\u2022 Average form score: 72.0%\n\u2022 Best rep: 25\n\u2022 Issue detected: Tempo inconsistent\n\u2022 Recommendation: Use a steady 3-1-3 count to keep each rep duration consistent.\n",
-        "acc_graph": "static/graphs\\acceleration.png",
-        "tempo_graph": "static/graphs\\tempo.png"
+        "report": "Analyzing data for 2025-12-19.\n\n\ud83c\udfcb\ufe0f Workout Analysis\n\n\u2022 Duration: 3 min 9 sec\n\u2022 Sets: 4\n\u2022 Total repetitions: 36\n\u2022 Reps per set: [11, 14, 5, 6]\n\u2022 Set quality (0-100): [92.4, 92.7, 96.5, 96.9]\n\u2022 Notable bad reps: [3, 5, 7, 8, 12, 13, 15, 18, 24, 26, 28, 30, 31, 36]\n\n\ud83e\udde0 Form Quality\n\u2022 Average form score: 72.0%\n\u2022 Best rep: 25\n\u2022 Issue detected: Tempo inconsistent\n\u2022 Recommendation: Pick a slow song and move to its beat to smooth out your tempo.\n\n\n![Acceleration Graph](static/graphs/acceleration_20251219_190703.png)\n\n![Tempo Graph](static/graphs/tempo_20251219_190703.png)\n\n![Set Quality](static/graphs/set_quality_20251219_190703.png)",
+        "acc_graph": "static/graphs/acceleration_20251219_190703.png",
+        "tempo_graph": "static/graphs/tempo_20251219_190703.png",
+        "quality_graph": "static/graphs/set_quality_20251219_190703.png"
     }
 ]
